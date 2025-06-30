@@ -1,4 +1,6 @@
 import os 
+import requests
+import json
 from google import genai
 from google.genai import types
 
@@ -12,9 +14,13 @@ client = genai.Client(
     api_key=my_api_key,
 )
 
-# Create get response for YOUTUBE_KEY
+# Create post response for YOUTUBE_KEY
 
-#Store the tags of the Youtube Video
+# Ask user for input (must be a youtube link)
+
+# Create get requests for a Youtube video
+
+# Store the tags of the Youtube Video
 
 # Specify the model to use and the messages to send opposite tags
 response = client.models.generate_content(
