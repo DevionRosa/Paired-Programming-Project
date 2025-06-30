@@ -15,6 +15,32 @@ client = genai.Client(
 )
 
 # Create post response for YOUTUBE_KEY
+url = 'https://www.googleapis.com/youtube/v3/videos'
+video_id = 'vm4H-GDUrWk'
+
+params = {
+    'part': 'snippet',
+    'id': video_id,
+    'key': my_yt_key
+}
+
+response = requests.get(url,params=params)
+data = response.json()
+
+print("status code:", response.status_code)
+print("JSON:", data)
+
+
+if 'items' in data and len(data['items']) > 0:
+    snippet = data['items'][0]['snippet']
+    title = snippet.get('title', '')
+    description = snippet.get('description', '')
+    tags = snippet.get('tags', [])
+    
+    print("Title:", title)
+    print("Description:", description)
+    print("Tags:", tags)
+
 
 # Ask user for input (must be a youtube link)
 
