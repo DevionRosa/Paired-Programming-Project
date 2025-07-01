@@ -14,9 +14,22 @@ client = genai.Client(
     api_key=my_api_key,
 )
 
+# Ask user for input (must be a youtube link)
+# Gets the YouTube ID from the link
+youtube_link = input("Enter a YouTube Link: ")
+video_id = ""
+start = False
+for char in youtube_link:
+    if char == '=':
+        start = True
+        continue
+    if char == '&':
+        break
+    if start:
+        video_id = video_id + char
+
 # Create post response for YOUTUBE_KEY
 url = 'https://www.googleapis.com/youtube/v3/videos'
-video_id = 'vm4H-GDUrWk'
 
 params = {
     'part': 'snippet',
@@ -24,12 +37,9 @@ params = {
     'key': my_yt_key
 }
 
+# Create get requests for a Youtube video
 response = requests.get(url,params=params)
 data = response.json()
-
-# print("status code:", response.status_code)
-# print("JSON:", data)
-
 
 if 'items' in data and len(data['items']) > 0:
     snippet = data['items'][0]['snippet']
@@ -41,20 +51,21 @@ if 'items' in data and len(data['items']) > 0:
     print("Description:", description)
     print("Tags:", tags)
 
+for i in range(len(tags)):
+    tags[i] = '#' + tags[i]
 
-# Ask user for input (must be a youtube link)
-
-# Create get requests for a Youtube video
-
-# Store the tags of the Youtube Video
 
 # Specify the model to use and the messages to send opposite tags
 response = client.models.generate_content(
     model="gemini-2.5-flash",
     config=types.GenerateContentConfig(
-      system_instruction="Pretend you are a YouTube creator uploading a video. You are given tags opposite to the video you are creating. Generate tags that are the opposite of the tags given."
+      system_instruction="Pretend you are a YouTube creator uploading a video. You are given tags opposite to the video you are creating. Generate tags, AND THE TAGS ONLY, that are the opposite of the tags given."
     ),
-    contents="What are the advantages of pair programming?", #The tags from the youtube api response
+    contents=" ".join(tags), #The tags from the youtube api response
 )
+
+# Removes the '#' in each tag so we can run it through the YouTube API
+new_tags = response.text.replace('#', '')
+print(new_tags)
 
 # Search for videos of the opposite tag and return a lsit (or playlist) of videos
