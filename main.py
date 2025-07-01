@@ -3,6 +3,7 @@ import requests
 import json
 from google import genai
 from google.genai import types
+from metadata_db import setup_db, get_video_metadata, cache_video_metadata
 
 my_api_key = os.getenv('GENAI_KEY')
 my_yt_key = os.getenv('YOUTUBE_KEY')
@@ -13,6 +14,9 @@ genai.api_key = my_api_key
 client = genai.Client(
     api_key=my_api_key,
 )
+
+#Setup DB and makes sure the table is ready
+setup_db()
 
 # Ask user for input (must be a youtube link)
 # Gets the YouTube ID from the link
@@ -30,28 +34,43 @@ for char in youtube_link:
     if start:
         video_id = video_id + char
 
-# Create post response for YOUTUBE_KEY
-url = 'https://www.googleapis.com/youtube/v3/videos'
 
-params = {
-    'part': 'snippet',
-    'id': video_id,
-    'key': my_yt_key
-}
+#check cache first 
+cached = get_video_metadata(video_id)
 
-# Create get requests for a Youtube video
-response = requests.get(url,params=params)
-data = response.json()
+#if video in cache load from cache, otherwise call API and store in cache
+if cached:
+    print("Loading from cache...")
+    title = cached['title']
+    description = cached['description']
+    tags = cached['tags']
 
-if 'items' in data and len(data['items']) > 0:
-    snippet = data['items'][0]['snippet']
-    title = snippet.get('title', '')
-    description = snippet.get('description', '')
-    tags = snippet.get('tags', [])
-    
-    print("Title:", title)
-    print("Description:", description)
-    print("Tags:", tags)
+else:
+    print("Fetching from YouTube API...")
+    # Create post response for YOUTUBE_KEY
+    url = 'https://www.googleapis.com/youtube/v3/videos'
+
+    params = {
+        'part': 'snippet',
+        'id': video_id,
+        'key': my_yt_key
+    }
+
+    # Create get requests for a Youtube video
+    response = requests.get(url,params=params)
+    data = response.json()
+
+    if 'items' in data and len(data['items']) > 0:
+        snippet = data['items'][0]['snippet']
+        title = snippet.get('title', '')
+        description = snippet.get('description', '')
+        tags = snippet.get('tags', [])
+
+        cache_video_metadata(video_id,title,description,tags)
+        
+print("Title:", title)
+print("Description:", description)
+print("Tags:", tags)
 
 for i in range(len(tags)):
     tags[i] = '#' + tags[i]

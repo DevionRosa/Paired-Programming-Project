@@ -1,6 +1,7 @@
 import sqlite3
+import json
 
-def create_video_metadata_table(db_name='youtube_antirec.db'):
+def setup_db(db_name='youtube_antirec.db'):
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
 
@@ -9,7 +10,7 @@ def create_video_metadata_table(db_name='youtube_antirec.db'):
             video_id TEXT PRIMARY KEY,
             title TEXT,
             description TEXT,
-            tags TEXT,         -- stores as comma-separated or JSON string
+            tags TEXT,         -- stores as json string
             cached_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     ''')
@@ -41,6 +42,3 @@ def get_video_metadata(video_id, db_name='youtube_antirec.db'):
         return {'title': title, 'description': description, 'tags': tags}
     return None
 
-
-if __name__ == "__main__":
-    create_video_metadata_table()
