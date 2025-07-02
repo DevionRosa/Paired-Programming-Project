@@ -68,9 +68,9 @@ else:
 
         cache_video_metadata(video_id,title,description,tags)
         
-print("Title:", title)
-print("Description:", description)
-print("Tags:", tags)
+# print("Title:", title)
+# print("Description:", description)
+# print("Tags:", tags)
 
 for i in range(len(tags)):
     tags[i] = '#' + tags[i]
@@ -79,24 +79,26 @@ for i in range(len(tags)):
 response = client.models.generate_content(
     model="gemini-2.5-flash",
     config=types.GenerateContentConfig(
-      system_instruction="Pretend you are a YouTube creator uploading a video. You are given tags opposite to the video you are creating. Generate 3 of the most relevant opposite tags, AND THE TAGS ONLY, that are the opposite of the tags given."
+      system_instruction= "Pretend you are searching for a video on YouTube. You have to search for a video opposite to the most relevent tags given to you in only 3 words or less. Return those 3 words and those words only."#"Pretend you are a YouTube creator uploading a video. You are given tags opposite to the video you are creating. Generate 3 of the most relevant opposite tags, AND THE TAGS ONLY, that are the opposite of the tags given."
     ),
     contents=" ".join(tags), #The tags from the youtube api response
 )
 
 # Removes the '#' in each tag so we can run it through the YouTube API
-new_tags = response.text.replace('#', '')
-print(new_tags)
+new_tags = response.text #.replace('#', '')
+# print(new_tags)
 
 url = 'https://www.googleapis.com/youtube/v3/search'
 params = {
     'part': 'snippet',
     'q': new_tags,
-    'key': my_yt_key
+    'key': my_yt_key,
+    'type': "video"
 }
 
 response = requests.get(url, params = params)
 data = response.json()
+# print(data)
 
 flattened_results = []
 for item in data['items']:
@@ -121,6 +123,17 @@ for item in data['items']:
 
     flattened_results.append(entry)
 
+
+print("Printing the first five results that match the alternative tags...\n")
 for result in flattened_results:
-    print(result)
-# Search for videos of the opposite tag and return a lsit (or playlist) of videos
+    title = result['title']
+    desc = result['description']
+    channel = result['channelTitle']
+    yt_id = result['id_value']
+
+    print(f"Link: https://www.youtube.com/watch?v={yt_id}")
+    print("Title: ", title)
+    print("Description: ", desc)
+    print("Channel Name: ", channel, '\n')
+
+# Search for videos of the opposite tag and return a list (or playlist) of videos
