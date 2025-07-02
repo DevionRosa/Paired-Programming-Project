@@ -17,7 +17,7 @@ def setup_db(db_name='youtube_antirec.db'):
 
     conn.commit()
     conn.close()
-    print(f" Created Database:'{db_name}")
+    print(f"Setting up catalog of YouTube video data...")
 
 def cache_video_metadata(video_id, title, description, tags, db_name='youtube_antirec.db'):
     conn = sqlite3.connect(db_name)

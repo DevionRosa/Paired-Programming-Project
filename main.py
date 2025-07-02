@@ -102,54 +102,72 @@ def print_searches(results):
 
 def main():
 
-    '''
-    Add print statement that gives overview of project
-    Put status code in main
-    Fix the testing status code 
-    '''
-    
+
     my_api_key = os.getenv('GENAI_KEY')
     my_yt_key = os.getenv('YOUTUBE_KEY')
 
     # Create an genAI client using the key from our environment variable
 
-
-    #Setup DB and makes sure the table is ready
-    setup_db()
+    print("Welcome to the YouTube Video Explorer!")
+    print("This tool helps you discover YouTube videos that are 'opposite' to a video you provide.")
+    print("Here's how it works:")
+    print("1. You'll provide a YouTube video link.")
+    print("2. The program will extract details like its title, description, and tags from YouTube.")
+    print("3. It then uses advanced AI (Gemini) to brainstorm search terms that represent the 'opposite' themes or content of the original video's tags.")
+    print("4. Finally, it searches YouTube using these new, 'opposite' terms and displays a list of relevant videos.")
+    print("This is perfect for finding new content, exploring different perspectives, or just having fun with AI-powered discovery!\n")
 
     # Ask user for input (must be a youtube link)
     # Gets the YouTube ID from the link
-    youtube_link = input("Enter a YouTube Link: ")
-    video_id = get_video_id(youtube_link)
+    video_id = ""
+    while not video_id:
+        youtube_link = input("Enter a YouTube Link (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ: ")
+        video_id = get_video_id(youtube_link)
+        if not video_id:
+            print("Invalid YouTube link. Please enter a valid YouTube video URL.")
 
+    video_id = get_video_id(youtube_link)
+    setup_db()
     #check cache first 
     cached = get_video_metadata(video_id)
 
     #if video in cache load from cache, otherwise call API and store in cache
     if cached:
-        print("Loading from cache...")
+        print("Loading already stored tags from the database...")
         title = cached['title']
         description = cached['description']
         tags = cached['tags']
 
     else:
-        data = fetch_video(video_id, my_yt_key).json()
-        if 'items' in data and len(data['items']) > 0:
-            snippet = data['items'][0]['snippet']
-            title = snippet.get('title', '')
-            description = snippet.get('description', '')
-            tags = snippet.get('tags', [])
+        fetched = fetch_video(video_id, my_yt_key)
+        if fetched.status_code == 200:
+            data = fetched.json()
+            if 'items' in data and len(data['items']) > 0:
+                snippet = data['items'][0]['snippet']
+                title = snippet.get('title', '')
+                description = snippet.get('description', '')
+                tags = snippet.get('tags', [])
 
-            cache_video_metadata(video_id,title,description,tags)
+                cache_video_metadata(video_id,title,description,tags)
+            else:
+                print(f"No video details found for ID '{video_id}'. It might be private, deleted, or incorrect.")
+                return # Exit if no video details
+        else:
+            print(f"Error fetching video details (HTTP Status: {response_video_fetch.status_code}): {response_video_fetch.text}")
+            return
         
     for i in range(len(tags)):
         tags[i] = '#' + tags[i]
 
-    new_tags = gemini_response(' '.join(tags), my_api_key) 
-    data = youtube_search(new_tags, my_yt_key).json()
-
-    flattened_results = flatten_dict(data)
-    print_searches(flattened_results)
+    new_tags = gemini_response(' '.join(tags), my_api_key)
+    youtube_fetched = youtube_search(new_tags, my_yt_key)
+    if youtube_fetched.status_code == 200:
+        data = youtube_fetched.json()
+        flattened_results = flatten_dict(data)
+        print_searches(flattened_results)
+    else:
+        print(f"Error searching YouTube (HTTP Status: {response_Youtube.status_code}): {response_Youtube.text}")
+        return
 
 if __name__ == "__main__":
     main()
