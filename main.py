@@ -101,6 +101,13 @@ def print_searches(results):
         print("Channel Name: ", channel, '\n')
 
 def main():
+
+    '''
+    Add print statement that gives overview of project
+    Put status code in main
+    Fix the testing status code 
+    '''
+    
     my_api_key = os.getenv('GENAI_KEY')
     my_yt_key = os.getenv('YOUTUBE_KEY')
 
